@@ -58,8 +58,12 @@ def generateLineplot(data, title, xlabel, ylabel, yfield, aspect, filename):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     #plt.xticks(rotation=45, fontsize=8)
-    sns.lineplot(data=groupedPerDay, x=groupedPerDay.index, y=yfield)
+    ax = sns.lineplot(data=data, x=data.index, y=yfield)
     plt.gca().set_aspect(aspect)
+    ratio = 0.5
+    xleft, xright = ax.get_xlim()
+    ybottom, ytop = ax.get_ylim()
+    ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
     plt.savefig(filename, dpi=250, bbox_inches='tight')
     plt.clf()
 
