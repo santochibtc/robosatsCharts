@@ -20,7 +20,8 @@ def generateCharts(api_url, proxy=()):
     groupedPerDay = df.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'count': 'sum', 'volume': 'sum'})
 
     sns.set_style("whitegrid")
-   
+    #drop last day as it is incomplete
+    groupedPerDay = groupedPerDay[:-1]
     generateLineplot(groupedPerDay, "Contracts per day", "Date", "Number", "count", 1.5, "contractsPerDay.jpg")
     generateLineplot(groupedPerDay, "Traded volume per day (BTC)", "Date", "BTC", "volume", 'auto', "volumePerDay.jpg")
     
@@ -33,7 +34,8 @@ def generateCharts(api_url, proxy=()):
     generateLineplot(groupedPerDay, "Cumulative num contracts", "Date", "BTC", "count", 'auto', "cumulativeContracts.jpg")
 
     groupedPerMonth = df.groupby([pd.Grouper(key='timestamp', freq='M')]).agg({'count': 'count', 'volume': 'sum'})    
-    
+    #drop last month as it is incomplete
+    groupedPerMonth = groupedPerMonth[:-1]
     #replace timestamp with month name and year
     groupedPerMonth.index = groupedPerMonth.index.strftime('%B %Y')
     
