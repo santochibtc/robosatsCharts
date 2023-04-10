@@ -6,6 +6,7 @@ import pandas as pd
 import seaborn as sns
 import argparse
 import sys
+import streamlit as st
 
 def generateCharts(api_url, proxy=()):
     proxies = {
@@ -45,6 +46,7 @@ def generateCharts(api_url, proxy=()):
     generateBarplot(groupedPerMonth, "Volume per month (BTC)", "Month", "BTC", "volume", 1.5, "volumePerMonth.jpg")
 
 def generateBarplot(data, title, xlabel, ylabel, yfield, aspect, filename):
+    fig = plt.figure(figsize=(10, 4))
     ax = sns.barplot(data=data, x=data.index, y=yfield)
     plt.title(title)
     plt.xlabel(xlabel)
@@ -55,10 +57,10 @@ def generateBarplot(data, title, xlabel, ylabel, yfield, aspect, filename):
     xleft, xright = ax.get_xlim()
     ybottom, ytop = ax.get_ylim()
     ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
-    plt.savefig(filename, dpi=250, bbox_inches='tight')
-    plt.clf()
+    st.pyplot(fig)
 
 def generateLineplot(data, title, xlabel, ylabel, yfield, aspect, filename):
+    fig = plt.figure(figsize=(10, 4))
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -69,8 +71,7 @@ def generateLineplot(data, title, xlabel, ylabel, yfield, aspect, filename):
     xleft, xright = ax.get_xlim()
     ybottom, ytop = ax.get_ylim()
     ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
-    plt.savefig(filename, dpi=250, bbox_inches='tight')
-    plt.clf()
+    st.pyplot(fig)
 
 if __name__ == "__main__":
      #get the api url from the command line
@@ -80,4 +81,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     api_url = args.api_url
     proxy_url = args.proxy_url
+    st.title('RoboSats P2P Stats')
     generateCharts(api_url, proxy_url)
