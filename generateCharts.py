@@ -22,7 +22,7 @@ def generateCharts(api_url, proxy=()):
     sns.set_style("whitegrid")
     #drop last day as it is incomplete
     groupedPerDay = groupedPerDay[:-1]
-    generateLineplot(groupedPerDay, "Contracts per day", "Date", "Number", "count", 1.5, "contractsPerDay.jpg")
+    generateLineplot(groupedPerDay, "Contracts per day", "Date", "Contracts", "count", 1.5, "contractsPerDay.jpg")
     generateLineplot(groupedPerDay, "Traded volume per day (BTC)", "Date", "BTC", "volume", 'auto', "volumePerDay.jpg")
     
     #Compute cumulative volume
@@ -31,23 +31,25 @@ def generateCharts(api_url, proxy=()):
 
     #Compute cumulative count of contracts
     groupedPerDay["count"] = groupedPerDay["count"].cumsum()
-    generateLineplot(groupedPerDay, "Cumulative num contracts", "Date", "BTC", "count", 'auto', "cumulativeContracts.jpg")
+    generateLineplot(groupedPerDay, "Cumulative num contracts", "Date", "Contracts", "count", 'auto', "cumulativeContracts.jpg")
 
     groupedPerMonth = df.groupby([pd.Grouper(key='timestamp', freq='M')]).agg({'count': 'count', 'volume': 'sum'})    
     #drop last month as it is incomplete
     groupedPerMonth = groupedPerMonth[:-1]
     #replace timestamp with month name and year
     groupedPerMonth.index = groupedPerMonth.index.strftime('%B %Y')
+    #change index name
+    groupedPerMonth.index.name = "Month"
     
-    generateBarplot(groupedPerMonth, "Contracts per month", "Month", "Number", "count", 1.5, "contractsPerMonth.jpg")
-    generateBarplot(groupedPerMonth, "Volume per month", "Month", "Volume", "volume", 1.5, "volumePerMonth.jpg")
+    generateBarplot(groupedPerMonth, "Contracts per month", "Month", "Contracts", "count", 1.5, "contractsPerMonth.jpg")
+    generateBarplot(groupedPerMonth, "Volume per month (BTC)", "Month", "BTC", "volume", 1.5, "volumePerMonth.jpg")
 
 def generateBarplot(data, title, xlabel, ylabel, yfield, aspect, filename):
+    ax = sns.barplot(data=data, x=data.index, y=yfield)
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.xticks(rotation=90, fontsize=8)
-    ax = sns.barplot(data=data, x=data.index, y=yfield)
     plt.gca().set_aspect(aspect)
     ratio = 0.5
     xleft, xright = ax.get_xlim()
