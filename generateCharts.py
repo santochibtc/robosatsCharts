@@ -33,11 +33,12 @@ def generateCharts(api_url, proxy=()):
     generateLineplot(groupedPerDay, "Cumulative num contracts", "Date", "BTC", "count", 'auto', "cumulativeContracts.jpg")
 
     groupedPerMonth = df.groupby([pd.Grouper(key='timestamp', freq='M')]).agg({'count': 'count', 'volume': 'sum'})    
-    #replace timestamp with month name
-    groupedPerMonth.index = groupedPerMonth.index.strftime('%B')
-    generateBarplot(groupedPerMonth.sort_values(by=['count'], ascending=False), "Contracts per month", "Month", "Number", "count", 1.5, "contractsPerMonth.jpg")
-    generateBarplot(groupedPerMonth.sort_values(by=['volume'], ascending=False), "Volume per month", "Month", "Volume", "volume", 1.5, "volumePerMonth.jpg")
-
+    
+    #replace timestamp with month name and year
+    groupedPerMonth.index = groupedPerMonth.index.strftime('%B %Y')
+    
+    generateBarplot(groupedPerMonth, "Contracts per month", "Month", "Number", "count", 1.5, "contractsPerMonth.jpg")
+    generateBarplot(groupedPerMonth, "Volume per month", "Month", "Volume", "volume", 1.5, "volumePerMonth.jpg")
 
 def generateBarplot(data, title, xlabel, ylabel, yfield, aspect, filename):
     plt.title(title)
