@@ -17,6 +17,7 @@ def generateCharts(api_url, proxy=()):
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["volume"] = df["volume"].astype(float)
     df["count"] = 1
+    df["currencyId"] = df['currency'].str['id'] #extract the currency id from the currency object
     #count the number of contracts and total volume for each day in df
     groupedPerDay = df.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'count': 'sum', 'volume': 'sum'})
 
@@ -37,6 +38,7 @@ def generateCharts(api_url, proxy=()):
     groupedPerMonth = df.groupby([pd.Grouper(key='timestamp', freq='M')]).agg({'count': 'count', 'volume': 'sum'})    
     #drop last month as it is incomplete
     groupedPerMonth = groupedPerMonth[:-1]
+
     #replace timestamp with month name and year
     groupedPerMonth.index = groupedPerMonth.index.strftime('%B %Y')
     #change index name
@@ -44,6 +46,50 @@ def generateCharts(api_url, proxy=()):
     
     generateBarplot(groupedPerMonth, "Contracts per month", "Month", "Contracts", "count", 1.5, "contractsPerMonth.jpg")
     generateBarplot(groupedPerMonth, "Volume per month (BTC)", "Month", "BTC", "volume", 1.5, "volumePerMonth.jpg")
+
+    #order the currencies by volume
+    volumePerCurrency = df.groupby(["currencyId"]).agg({'volume': 'sum'})
+    volumePerCurrency = volumePerCurrency.sort_values(by=['volume'], ascending=False)
+    #get the list of currencies
+    currencies = volumePerCurrency.index.tolist()
+    generateCurrenciesDailyContractsPlot(df, currencies)
+    generateCurrenciesCumulativeVolPlot(df, currencies)
+
+def generateCurrenciesDailyContractsPlot(df, currencies):
+    fig = plt.figure(figsize=(10, 4))
+    plt.title("Daily contracts by currency")
+    plt.xlabel("Date")
+    plt.ylabel("Contracts")
+    for currency in currencies:
+        currencyData = df.loc[df['currencyId']==currency]
+        groupedPerDay = currencyData.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'count': 'sum', 'volume': 'sum'})
+        groupedPerDay = groupedPerDay[:-1]
+        if groupedPerDay.empty:
+            continue
+        ax = sns.lineplot(data=groupedPerDay, x=groupedPerDay.index, y="count")
+        #get the last value
+        lastValue = groupedPerDay["count"].iloc[-1]
+        ax.lines[-1].set_label(str(currency))
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0., ncol=2)
+    st.pyplot(fig)
+
+def generateCurrenciesCumulativeVolPlot(df, currencies):
+    fig = plt.figure(figsize=(10, 4))
+    plt.title("Cumulative volume (BTC) by currency")
+    plt.xlabel("Date")
+    plt.ylabel("BTC")
+    for currency in currencies:
+        #filter the data with index 1 equal to the currency
+        currencyData = df.loc[df['currencyId']==currency]
+        groupedPerDayAndCurrency = currencyData.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'count': 'sum', 'volume': 'sum'})
+        groupedPerDayAndCurrency["volume"] = groupedPerDayAndCurrency["volume"].cumsum()
+        #get the last value
+        lastValue = groupedPerDayAndCurrency["volume"].iloc[-1]
+        if lastValue > 0.001:
+            ax = sns.lineplot(data=groupedPerDayAndCurrency, x=groupedPerDayAndCurrency.index, y="volume")
+            ax.lines[-1].set_label(str(currency) + " {:.3f}".format(lastValue))
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0., ncol=2)
+    st.pyplot(fig)
 
 def generateBarplot(data, title, xlabel, ylabel, yfield, aspect, filename):
     fig = plt.figure(figsize=(10, 4))
