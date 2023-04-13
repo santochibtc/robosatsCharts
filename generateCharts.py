@@ -55,6 +55,13 @@ def generateCharts(api_url, proxy=()):
     generateCurrenciesDailyContractsPlot(df, currencies)
     generateCurrenciesCumulativeVolPlot(df, currencies)
 
+    #calculate average premium per day weighted by volume
+    df["premium"] = df["premium"].astype(float) * df["volume"]
+    groupedPerDay = df.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'premium': 'sum', 'volume': 'sum'})
+    groupedPerDay["premium"] = groupedPerDay["premium"] / groupedPerDay["volume"]
+    groupedPerDay = groupedPerDay[:-1]
+    generateLineplot(groupedPerDay, "Average premium per day", "Date", "Premium", "premium", 1.5, "premiumPerDay.jpg")
+
 def generateCurrenciesDailyContractsPlot(df, currencies):
     fig = plt.figure(figsize=(10, 4))
     plt.title("Daily contracts by currency")
