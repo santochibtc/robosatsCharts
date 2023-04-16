@@ -32,16 +32,16 @@ def generateCharts(api_url, proxy=()):
     sns.set_style("whitegrid")
     #drop last day as it is incomplete
     groupedPerDay = groupedPerDay[:-1]
-    generateLineplot(groupedPerDay, "Contracts per day", "Date", "Contracts", "count", 1.5, "contractsPerDay.jpg")
-    generateLineplot(groupedPerDay, "Traded volume per day (BTC)", "Date", "BTC", "volume", 'auto', "volumePerDay.jpg")
+    generateLineplot(groupedPerDay, "Contracts per day", "Date", "Contracts", "count", 1.5)
+    generateLineplot(groupedPerDay, "Traded volume per day (BTC)", "Date", "BTC", "volume", 'auto')
     
     #Compute cumulative volume
     groupedPerDay["volume"] = groupedPerDay["volume"].cumsum()
-    generateLineplot(groupedPerDay, "Cumulative volume (BTC)", "Date", "BTC", "volume", 1.5, "cumulativeVolume.jpg")
+    generateLineplot(groupedPerDay, "Cumulative volume (BTC)", "Date", "BTC", "volume", 1.5)
 
     #Compute cumulative count of contracts
     groupedPerDay["count"] = groupedPerDay["count"].cumsum()
-    generateLineplot(groupedPerDay, "Cumulative num contracts", "Date", "Contracts", "count", 'auto', "cumulativeContracts.jpg")
+    generateLineplot(groupedPerDay, "Cumulative num contracts", "Date", "Contracts", "count", 'auto')
 
     groupedPerMonth = df.groupby([pd.Grouper(key='timestamp', freq='M')]).agg({'count': 'count', 'volume': 'sum'})    
     #drop last month as it is incomplete
@@ -51,9 +51,8 @@ def generateCharts(api_url, proxy=()):
     groupedPerMonth.index = groupedPerMonth.index.strftime('%B %Y')
     #change index name
     groupedPerMonth.index.name = "Month"
-    
-    generateBarplot(groupedPerMonth, "Contracts per month", "Month", "Contracts", "count", 1.5, "contractsPerMonth.jpg")
-    generateBarplot(groupedPerMonth, "Volume per month (BTC)", "Month", "BTC", "volume", 1.5, "volumePerMonth.jpg")
+    generateBarplot(groupedPerMonth, "Contracts per month", "Month", "Contracts", "count", 1.5)
+    generateBarplot(groupedPerMonth, "Volume per month (BTC)", "Month", "BTC", "volume", 1.5)
 
     #order the currencies by volume
     volumePerCurrency = df.groupby(["currencySymbol"]).agg({'volume': 'sum'})
@@ -68,7 +67,7 @@ def generateCharts(api_url, proxy=()):
     groupedPerDay = df.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'premium': 'sum', 'volume': 'sum'})
     groupedPerDay["premium"] = groupedPerDay["premium"] / groupedPerDay["volume"]
     groupedPerDay = groupedPerDay[:-1]
-    generateLineplot(groupedPerDay, "Average premium per day", "Date", "Premium", "premium", 1.5, "premiumPerDay.jpg")
+    generateLineplot(groupedPerDay, "Average premium per day", "Date", "Premium", "premium", 1.5)
 
 def generateCurrenciesDailyContractsPlot(df, currencies):
     fig = plt.figure(figsize=(10, 4))
@@ -106,7 +105,7 @@ def generateCurrenciesCumulativeVolPlot(df, currencies):
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0., ncol=2)
     st.pyplot(fig)
 
-def generateBarplot(data, title, xlabel, ylabel, yfield, aspect, filename):
+def generateBarplot(data, title, xlabel, ylabel, yfield, aspect):
     fig = plt.figure(figsize=(10, 4))
     ax = sns.barplot(data=data, x=data.index, y=yfield)
     plt.title(title)
@@ -120,7 +119,7 @@ def generateBarplot(data, title, xlabel, ylabel, yfield, aspect, filename):
     ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
     st.pyplot(fig)
 
-def generateLineplot(data, title, xlabel, ylabel, yfield, aspect, filename):
+def generateLineplot(data, title, xlabel, ylabel, yfield, aspect):
     fig = plt.figure(figsize=(10, 4))
     plt.title(title)
     plt.xlabel(xlabel)
