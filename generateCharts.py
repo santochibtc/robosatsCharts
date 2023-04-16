@@ -66,6 +66,26 @@ def generateCharts(api_url, proxy=()):
     groupedPerDay = df.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'volume': 'mean'})
     groupedPerDay = groupedPerDay[:-1]
     generateLineplot(groupedPerDay, "Average volume per day (BTC)", "Date", "BTC", "volume")
+
+    #calculate average premium and number of contracts per currency
+    groupedPerCurrency = df.groupby(["currencySymbol"]).agg({'premium': 'mean', 'count': 'sum'})
+    #order by premium distance to 0
+    groupedPerCurrency = groupedPerCurrency.sort_values(by=['count'], ascending=False)
+    numContracts = 0
+    totalContracts = df.shape[0]
+    numCurrencies = 0
+    #count the number of currencies that contain the 95% of the total number of contracts
+    for index, currency in groupedPerCurrency.iterrows():
+        numContracts += currency['count']
+        numCurrencies += 1
+        if numContracts > totalContracts * 0.95:
+            break
+    #keep only the currencies that have 95% of the contracts
+    groupedPerCurrencyTop95 = groupedPerCurrency[:numCurrencies]
+    generateBarplot(groupedPerCurrencyTop95, "Contracts per currency (95% of contracts)", "Currency", "Contracts", "count")
+    groupedPerCurrencyBelow95 = groupedPerCurrency[numCurrencies:]
+    generateBarplot(groupedPerCurrencyBelow95, "Contracts per currency (remaining contracts)", "Currency", "Contracts", "count")
+    generateBarplot(groupedPerCurrency, "Average premium per currency", "Currency", "Premium", "premium")
     #calculate average premium per day weighted by volume
     df["premium"] = df["premium"] * df["volume"]
     groupedPerDay = df.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'premium': 'sum', 'volume': 'sum'})
