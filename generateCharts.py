@@ -86,12 +86,49 @@ def generateCharts(api_url, proxy=()):
     groupedPerCurrencyBelow95 = groupedPerCurrency[numCurrencies:]
     generateBarplot(groupedPerCurrencyBelow95, "Contracts per currency (remaining contracts)", "Currency", "Contracts", "count")
     generateBarplot(groupedPerCurrency, "Average premium per currency", "Currency", "Premium", "premium")
+
+    generateCurrenciesHistograms(df, currencies)
+
     #calculate average premium per day weighted by volume
     df["premium"] = df["premium"] * df["volume"]
     groupedPerDay = df.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'premium': 'sum', 'volume': 'sum'})
     groupedPerDay["premium"] = groupedPerDay["premium"] / groupedPerDay["volume"]
     groupedPerDay = groupedPerDay[:-1]
     generateLineplot(groupedPerDay, "Average premium per day", "Date", "Premium", "premium")
+
+def generateCurrenciesHistograms(df, currencies):
+    for currency in currencies:
+        fig = plt.figure(figsize=(12, 6))
+        if currency == 'BTC':
+            plt.title("BTC Swaps per premium")
+            plt.ylabel('Swaps')
+        else:
+            plt.title(str(currency) + " Contracts per premium")
+            plt.ylabel('Contracts')
+        currencyData = df.loc[df['currencySymbol']==currency]
+        if len(currencyData) < 5:
+            continue
+        #order by premium distance to mean
+        mean = currencyData["premium"].mean()
+        currencyData = currencyData.sort_values(by=['premium'], key=lambda x: abs(x - mean))
+        #keep only the 95% of the data around 0 premium
+        currencyData = currencyData[:int(len(currencyData) * 0.95)]
+        #find min and max premium
+        minPremium = currencyData["premium"].min()
+        maxPremium = currencyData["premium"].max()
+        if (maxPremium - minPremium < 0.1):
+            continue
+        ax = sns.histplot(data=currencyData, x="premium", binwidth=0.1, binrange=(minPremium, maxPremium))
+        if len(ax.patches) < 3:
+            continue
+        for p in ax.patches:
+            if (p.get_height() > 0):
+                ax.annotate(str(p.get_height()), (p.get_x() + p.get_width() / 2., p.get_height()), ha='center', va='center', xytext=(0, 10), textcoords='offset points')
+        step = ((maxPremium - minPremium) / 20).round(1)
+        #set the x axis labels in the middle of the bins and with one decimal
+        ticks = numpy.arange(minPremium, maxPremium, step=step)
+        plt.xticks(ticks + 0.05, ticks.round(1))
+        st.pyplot(fig)
 
 def generateCurrenciesDailyContractsPlot(df, currencies):
     fig = plt.figure(figsize=(10, 4))
