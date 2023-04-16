@@ -17,7 +17,15 @@ def generateCharts(api_url, proxy=()):
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["volume"] = df["volume"].astype(float)
     df["count"] = 1
-    df["currencyId"] = df['currency'].str['id'] #extract the currency id from the currency object
+    df["premium"] = df["premium"].astype(float)
+
+    #load currencies json file
+    with open('currencies.json') as f:
+        currenciesLUT = json.load(f)
+    #convert the currenciesLUT to a dictionary
+    currenciesLUT = {int(k):v for k,v in currenciesLUT.items()}
+    df["currencySymbol"] = df['currency'].str['id'].map(currenciesLUT) #add the currency symbol to the dataframe
+
     #count the number of contracts and total volume for each day in df
     groupedPerDay = df.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'count': 'sum', 'volume': 'sum'})
 
@@ -48,7 +56,7 @@ def generateCharts(api_url, proxy=()):
     generateBarplot(groupedPerMonth, "Volume per month (BTC)", "Month", "BTC", "volume", 1.5, "volumePerMonth.jpg")
 
     #order the currencies by volume
-    volumePerCurrency = df.groupby(["currencyId"]).agg({'volume': 'sum'})
+    volumePerCurrency = df.groupby(["currencySymbol"]).agg({'volume': 'sum'})
     volumePerCurrency = volumePerCurrency.sort_values(by=['volume'], ascending=False)
     #get the list of currencies
     currencies = volumePerCurrency.index.tolist()
@@ -56,7 +64,7 @@ def generateCharts(api_url, proxy=()):
     generateCurrenciesCumulativeVolPlot(df, currencies)
 
     #calculate average premium per day weighted by volume
-    df["premium"] = df["premium"].astype(float) * df["volume"]
+    df["premium"] = df["premium"] * df["volume"]
     groupedPerDay = df.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'premium': 'sum', 'volume': 'sum'})
     groupedPerDay["premium"] = groupedPerDay["premium"] / groupedPerDay["volume"]
     groupedPerDay = groupedPerDay[:-1]
@@ -68,7 +76,7 @@ def generateCurrenciesDailyContractsPlot(df, currencies):
     plt.xlabel("Date")
     plt.ylabel("Contracts")
     for currency in currencies:
-        currencyData = df.loc[df['currencyId']==currency]
+        currencyData = df.loc[df['currencySymbol']==currency]
         groupedPerDay = currencyData.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'count': 'sum', 'volume': 'sum'})
         groupedPerDay = groupedPerDay[:-1]
         if groupedPerDay.empty:
@@ -87,7 +95,7 @@ def generateCurrenciesCumulativeVolPlot(df, currencies):
     plt.ylabel("BTC")
     for currency in currencies:
         #filter the data with index 1 equal to the currency
-        currencyData = df.loc[df['currencyId']==currency]
+        currencyData = df.loc[df['currencySymbol']==currency]
         groupedPerDayAndCurrency = currencyData.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'count': 'sum', 'volume': 'sum'})
         groupedPerDayAndCurrency["volume"] = groupedPerDayAndCurrency["volume"].cumsum()
         #get the last value
