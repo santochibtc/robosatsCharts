@@ -112,10 +112,6 @@ def generateBarplot(data, title, xlabel, ylabel, yfield):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.xticks(rotation=90, fontsize=8)
-    ratio = 0.5
-    xleft, xright = ax.get_xlim()
-    ybottom, ytop = ax.get_ylim()
-    ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
     st.pyplot(fig)
 
 def generateLineplot(data, title, xlabel, ylabel, yfield):
@@ -124,10 +120,6 @@ def generateLineplot(data, title, xlabel, ylabel, yfield):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     ax = sns.lineplot(data=data, x=data.index, y=yfield)
-    ratio = 0.5
-    xleft, xright = ax.get_xlim()
-    ybottom, ytop = ax.get_ylim()
-    ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
     st.pyplot(fig)
 
 if __name__ == "__main__":
