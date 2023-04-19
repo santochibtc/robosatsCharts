@@ -146,7 +146,7 @@ def generateCurrenciesDailyContractsPlot(df, currencies):
         #get the last value
         lastValue = groupedPerDay["count"].iloc[-1]
         ax.lines[-1].set_label(str(currency))
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0., ncol=2)
+    plt.legend(ncol=2)
     st.pyplot(fig)
 
 def generateCurrenciesCumulativeVolPlot(df, currencies):
@@ -164,7 +164,7 @@ def generateCurrenciesCumulativeVolPlot(df, currencies):
         if lastValue > 0.001:
             ax = sns.lineplot(data=groupedPerDayAndCurrency, x=groupedPerDayAndCurrency.index, y="volume")
             ax.lines[-1].set_label(str(currency) + " {:.3f}".format(lastValue))
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0., ncol=2)
+    plt.legend(ncol=2)
     st.pyplot(fig)
 
 def generateBarplot(data, title, xlabel, ylabel, yfield):
