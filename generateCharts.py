@@ -33,15 +33,21 @@ def generateCharts(api_url, proxy=()):
     #drop last day as it is incomplete
     groupedPerDay = groupedPerDay[:-1]
     generateLineplot(groupedPerDay, "Contracts per day", "Date", "Contracts", "count")
-    generateLineplot(groupedPerDay, "Traded volume per day (BTC)", "Date", "BTC", "volume")
+    generateLineplot(groupedPerDay, "Volume per day (BTC)", "Date", "BTC", "volume")
+
+    #Average volume per day
+    groupedPerDayAvg = groupedPerDay.copy()
+    groupedPerDayAvg['volume'] = groupedPerDayAvg['volume'] / groupedPerDayAvg['count']
+    generateLineplot(groupedPerDayAvg, "Average volume per day (BTC)", "Date", "BTC", "volume")
     
     #Compute cumulative volume
     groupedPerDay["volume"] = groupedPerDay["volume"].cumsum()
-    generateLineplot(groupedPerDay, "Cumulative volume (BTC)", "Date", "BTC", "volume")
+    #get the last value of the cumulative volume
+    generateLineplot(groupedPerDay, "Cumulative volume " + str(groupedPerDay.iloc[-1]['volume'].round(3)) + " BTC", "Date", "BTC", "volume")
 
     #Compute cumulative count of contracts
     groupedPerDay["count"] = groupedPerDay["count"].cumsum()
-    generateLineplot(groupedPerDay, "Cumulative num contracts", "Date", "Contracts", "count")
+    generateLineplot(groupedPerDay, "Cumulative num contracts " + str(int(groupedPerDay.iloc[-1]['count'])), "Date", "Contracts", "count")
 
     groupedPerMonth = df.groupby([pd.Grouper(key='timestamp', freq='M')]).agg({'count': 'count', 'volume': 'sum'})    
     #drop last month as it is incomplete
@@ -61,11 +67,6 @@ def generateCharts(api_url, proxy=()):
     currencies = volumePerCurrency.index.tolist()
     generateCurrenciesDailyContractsPlot(df, currencies)
     generateCurrenciesCumulativeVolPlot(df, currencies)
-
-    #Average volume per day
-    groupedPerDay = df.groupby([pd.Grouper(key='timestamp', freq='D')]).agg({'volume': 'mean'})
-    groupedPerDay = groupedPerDay[:-1]
-    generateLineplot(groupedPerDay, "Average volume per day (BTC)", "Date", "BTC", "volume")
 
     #calculate average premium and number of contracts per currency
     groupedPerCurrency = df.groupby(["currencySymbol"]).agg({'premium': 'mean', 'count': 'sum'})
