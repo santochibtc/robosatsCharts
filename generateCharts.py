@@ -131,6 +131,32 @@ def generateCharts(api_url, proxy=()):
 
     generateCurrenciesHistograms(df, currencies)
 
+    # agrregate by day of the week
+    df["dayOfWeek"] = df["timestamp"].dt.day_name()
+    groupedPerDayOfWeek = df.groupby(["dayOfWeek"]).agg(
+        {"count": "sum", "volume": "sum"}
+    )
+    # order by day of the week
+    groupedPerDayOfWeek = groupedPerDayOfWeek.reindex(
+        ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    )
+    # plot the number of contracts per day of the week
+    generateBarplot(
+        groupedPerDayOfWeek,
+        "Contracts per day of the week",
+        "Day of the week",
+        "Contracts",
+        "count",
+    )
+    # plot the volume per day of the week
+    generateBarplot(
+        groupedPerDayOfWeek,
+        "Volume per day of the week (BTC)",
+        "Day of the week",
+        "BTC",
+        "volume",
+    )
+
     # calculate average premium per day weighted by volume
     df["premium"] = df["premium"] * df["volume"]
     groupedPerDay = df.groupby([pd.Grouper(key="timestamp", freq="D")]).agg(
