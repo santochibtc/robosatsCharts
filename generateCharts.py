@@ -172,31 +172,34 @@ def generateCharts(api_url, proxy=()):
 def generateCurrenciesHistograms(df, currencies):
     for currency in currencies:
         fig = plt.figure(figsize=(12, 6))
+        currencyData = df.loc[df["currencySymbol"] == currency]
+        median = currencyData["premium"].median()
         if currency == "BTC":
-            plt.title("BTC Swaps per premium")
+            plt.title("BTC Swaps per premium, median=" + str(median.round(1)))
             plt.ylabel("Swaps")
         else:
-            plt.title(str(currency) + " Contracts per premium")
+            plt.title(
+                str(currency) + " Contracts per premium, median=" + str(median.round(1))
+            )
             plt.ylabel("Contracts")
-        currencyData = df.loc[df["currencySymbol"] == currency]
         if len(currencyData) < 5:
             continue
-        # order by premium distance to mean
-        mean = currencyData["premium"].mean()
+        # order by premium distance to median
         currencyData = currencyData.sort_values(
-            by=["premium"], key=lambda x: abs(x - mean)
+            by=["premium"], key=lambda x: abs(x - median)
         )
         # keep only the 95% of the data around 0 premium
         currencyData = currencyData[: int(len(currencyData) * 0.95)]
         # find min and max premium
-        minPremium = currencyData["premium"].min()
-        maxPremium = currencyData["premium"].max()
+        minPremium = currencyData["premium"].min().round(1)
+        maxPremium = currencyData["premium"].max().round(1)
         if maxPremium - minPremium < 0.1:
             continue
+        binwidth = 0.2
         ax = sns.histplot(
             data=currencyData,
             x="premium",
-            binwidth=0.1,
+            binwidth=binwidth,
             binrange=(minPremium, maxPremium),
         )
         if len(ax.patches) < 3:
@@ -211,10 +214,12 @@ def generateCurrenciesHistograms(df, currencies):
                     xytext=(0, 10),
                     textcoords="offset points",
                 )
+        # add median vertical line
+        ax.axvline(median)
         step = ((maxPremium - minPremium) / 20).round(1)
         # set the x axis labels in the middle of the bins and with one decimal
-        ticks = numpy.arange(minPremium, maxPremium, step=step)
-        plt.xticks(ticks + 0.05, ticks.round(1))
+        ticks = numpy.arange(minPremium, maxPremium, step=step).round(1)
+        plt.xticks(ticks=ticks, labels=ticks)
         st.pyplot(fig)
 
 
