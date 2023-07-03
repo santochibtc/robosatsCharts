@@ -82,7 +82,9 @@ def generateCharts(api_url, proxy=()):
     generateBarplot(
         groupedPerMonth, "Contracts per month", "Month", "Contracts", "count"
     )
-    generateBarplot(groupedPerMonth, "Volume per month (BTC)", "Month", "BTC", "volume")
+    generateBarplot(
+        groupedPerMonth, "Volume per month (BTC)", "Month", "BTC", "volume", 2
+    )
 
     # order the currencies by volume
     volumePerCurrency = df.groupby(["currencySymbol"]).agg({"volume": "sum"})
@@ -130,6 +132,7 @@ def generateCharts(api_url, proxy=()):
         "Currency",
         "Premium",
         "premium",
+        2,
     )
 
     generateCurrenciesHistograms(df, currencies)
@@ -158,6 +161,7 @@ def generateCharts(api_url, proxy=()):
         "Day of the week",
         "BTC",
         "volume",
+        2,
     )
 
     # calculate average premium per day weighted by volume
@@ -207,16 +211,7 @@ def generateCurrenciesHistograms(df, currencies):
         )
         if len(ax.patches) < 3:
             continue
-        for p in ax.patches:
-            if p.get_height() > 0:
-                ax.annotate(
-                    str(p.get_height()),
-                    (p.get_x() + p.get_width() / 2.0, p.get_height()),
-                    ha="center",
-                    va="center",
-                    xytext=(0, 10),
-                    textcoords="offset points",
-                )
+        addBarsValues(ax, 2)
         # add median vertical line
         ax.axvline(median)
         step = ((maxPremium - minPremium) / 20).round(1)
@@ -224,6 +219,23 @@ def generateCurrenciesHistograms(df, currencies):
         ticks = numpy.arange(minPremium, maxPremium, step=step).round(1)
         plt.xticks(ticks=ticks, labels=ticks)
         st.pyplot(fig)
+
+
+def addBarsValues(ax, decimals=0):
+    for p in ax.patches:
+        if p.get_height() > 0:
+            if decimals > 0:
+                text = str(p.get_height().round(decimals))
+            else:
+                text = str(p.get_height().astype(int))
+            ax.annotate(
+                text,
+                (p.get_x() + p.get_width() / 2.0, p.get_height()),
+                ha="center",
+                va="center",
+                xytext=(0, 10),
+                textcoords="offset points",
+            )
 
 
 def generateCurrenciesDailyContractsPlot(df, currencies):
@@ -272,9 +284,10 @@ def generateCurrenciesCumulativeVolPlot(df, currencies):
     st.pyplot(fig)
 
 
-def generateBarplot(data, title, xlabel, ylabel, yfield):
+def generateBarplot(data, title, xlabel, ylabel, yfield, decimals=0):
     fig = plt.figure(figsize=(10, 4))
     ax = sns.barplot(data=data, x=data.index, y=yfield)
+    addBarsValues(ax, decimals)
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
