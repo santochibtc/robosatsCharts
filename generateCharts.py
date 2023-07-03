@@ -13,7 +13,7 @@ def generateCharts(api_url, proxy=()):
     proxies = {"http": proxy}
     response = requests.get(api_url, proxies=proxies, timeout=60)
     df = pd.DataFrame(json.loads(response.text))
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df["timestamp"] = pd.to_datetime(df["timestamp"].astype("datetime64[s]"))
     df["volume"] = df["volume"].astype(float)
     df["count"] = 1
     df["premium"] = df["premium"].astype(float)
@@ -26,6 +26,9 @@ def generateCharts(api_url, proxy=()):
     df["currencySymbol"] = (
         df["currency"].str["id"].map(currenciesLUT)
     )  # add the currency symbol to the dataframe
+    df = df.drop_duplicates(
+        subset=["timestamp", "currencySymbol", "volume", "price", "premium"]
+    )
 
     # count the number of contracts and total volume for each day in df
     groupedPerDay = df.groupby([pd.Grouper(key="timestamp", freq="D")]).agg(
