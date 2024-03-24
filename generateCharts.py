@@ -7,13 +7,21 @@ import seaborn as sns
 import argparse
 import sys
 import streamlit as st
+import datetime
 
 
 def generateCharts(api_url, proxy=()):
     proxies = {"http": proxy}
-    response = requests.get(api_url, proxies=proxies, timeout=60)
-    df = pd.DataFrame(json.loads(response.text))
-    df["timestamp"] = pd.to_datetime(df["timestamp"].astype("datetime64[s]"))
+    start = datetime.date(2022, 1, 1)
+    end = start + datetime.timedelta(days=31)
+    df = pd.DataFrame()
+    while(start < datetime.date.today()):
+        url_width_dates = api_url + '?start=' + start.strftime('%d-%m-%Y') + '&end=' + end.strftime('%d-%m-%Y')
+        response = requests.get(url_width_dates, proxies=proxies, timeout=60)
+        df = pd.concat([df, pd.DataFrame(json.loads(response.text))])        
+        start += datetime.timedelta(days=31) 
+        end += datetime.timedelta(days=31)
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["volume"] = df["volume"].astype(float)
     df["count"] = 1
     df["premium"] = df["premium"].astype(float)
@@ -24,7 +32,7 @@ def generateCharts(api_url, proxy=()):
     # convert the currenciesLUT to a dictionary
     currenciesLUT = {int(k): v for k, v in currenciesLUT.items()}
     df["currencySymbol"] = (
-        df["currency"].str["id"].map(currenciesLUT)
+        df["currency"].map(currenciesLUT)
     )  # add the currency symbol to the dataframe
     df = df.drop_duplicates(
         subset=["timestamp", "currencySymbol", "volume", "price", "premium"]
@@ -73,7 +81,7 @@ def generateCharts(api_url, proxy=()):
         {"count": "count", "volume": "sum"}
     )
     # drop last month as it is incomplete
-    groupedPerMonth = groupedPerMonth[:-1]
+    #groupedPerMonth = groupedPerMonth[:-1]
 
     # replace timestamp with month name and year
     groupedPerMonth.index = groupedPerMonth.index.strftime("%B %Y")
