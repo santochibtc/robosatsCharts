@@ -318,7 +318,7 @@ if __name__ == "__main__":
     parser.add_argument("-api_url", help="the url of the api")
     parser.add_argument("-proxy_url", help="the url of the tor proxy")
     args = parser.parse_args()
-    api_url = args.api_url
-    proxy_url = args.proxy_url
+    api_url = 'http://4t4jxmivv6uqej6xzx2jx3fxh75gtt65v3szjoqmc4ugdlhipzdat6yd.onion/api/ticks/'
+    proxy_url = 'socks5h://127.0.0.1:9050'
     st.title("RoboSats P2P Stats")
     generateCharts(api_url, proxy_url)
