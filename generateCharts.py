@@ -13,18 +13,19 @@ import datetime
 def generateCharts(api_url, proxy=()):
     proxies = {"http": proxy}
     start = datetime.date(2022, 1, 1)
-    end = start + datetime.timedelta(days=31)
-    df = pd.DataFrame()
-    while(start < datetime.date.today()):
-        url_width_dates = api_url + '?start=' + start.strftime('%d-%m-%Y') + '&end=' + end.strftime('%d-%m-%Y')
-        response = requests.get(url_width_dates, proxies=proxies, timeout=60)
-        df = pd.concat([df, pd.DataFrame(json.loads(response.text))])        
-        start += datetime.timedelta(days=31) 
-        end += datetime.timedelta(days=31)
+    date_range = pd.date_range(start=start, end=datetime.date.today(), freq='M')
+    df_list = []
+    for start_date in date_range:
+        end_date = start_date + pd.offsets.MonthEnd()
+        url_with_dates = f"{api_url}?start={start_date.strftime('%d-%m-%Y')}&end={end_date.strftime('%d-%m-%Y')}"
+        response = requests.get(url_with_dates, proxies=proxies, timeout=60)
+        df_list.append(pd.DataFrame(json.loads(response.text)))
+
+    df = pd.concat(df_list, ignore_index=True)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
-    df["volume"] = df["volume"].astype(float)
+    df["volume"] = pd.to_numeric(df["volume"], errors='coerce')
+    df["premium"] = pd.to_numeric(df["premium"], errors='coerce')
     df["count"] = 1
-    df["premium"] = df["premium"].astype(float)
 
     # load currencies json file
     with open("currencies.json") as f:
@@ -37,7 +38,12 @@ def generateCharts(api_url, proxy=()):
     df = df.drop_duplicates(
         subset=["timestamp", "currencySymbol", "volume", "price", "premium"]
     )
+    generate_time_series_charts(df)
+    generate_currency_charts(df)
+    generate_day_of_week_charts(df)
+    generate_premium_charts(df)
 
+def generate_time_series_charts(df):
     # count the number of contracts and total volume for each day in df
     groupedPerDay = df.groupby([pd.Grouper(key="timestamp", freq="D")]).agg(
         {"count": "sum", "volume": "sum"}
@@ -94,6 +100,7 @@ def generateCharts(api_url, proxy=()):
         groupedPerMonth, "Volume per month (BTC)", "Month", "BTC", "volume", 2
     )
 
+def generate_currency_charts(df):
     # order the currencies by volume
     volumePerCurrency = df.groupby(["currencySymbol"]).agg({"volume": "sum"})
     volumePerCurrency = volumePerCurrency.sort_values(by=["volume"], ascending=False)
@@ -145,6 +152,7 @@ def generateCharts(api_url, proxy=()):
 
     generateCurrenciesHistograms(df, currencies)
 
+def generate_day_of_week_charts(df):
     # agrregate by day of the week
     df["dayOfWeek"] = df["timestamp"].dt.day_name()
     groupedPerDayOfWeek = df.groupby(["dayOfWeek"]).agg(
@@ -172,6 +180,7 @@ def generateCharts(api_url, proxy=()):
         2,
     )
 
+def generate_premium_charts(df):
     # calculate average premium per day weighted by volume
     df["premium"] = df["premium"] * df["volume"]
     groupedPerDay = df.groupby([pd.Grouper(key="timestamp", freq="D")]).agg(
@@ -182,7 +191,6 @@ def generateCharts(api_url, proxy=()):
     generateLineplot(
         groupedPerDay, "Average premium per day", "Date", "Premium", "premium"
     )
-
 
 def generateCurrenciesHistograms(df, currencies):
     for currency in currencies:
